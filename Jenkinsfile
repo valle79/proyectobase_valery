@@ -50,7 +50,7 @@ pipeline {
         
         stage('JMeter Load Test') {
             steps {
-                sh 'jmeter -n -t jmeter-test-plan.jmx -l results.jtl -e -o jmeter-report'
+                sh 'jmeter -n -t jmeter-test-plan.jmx -l results.jtl'
             }
         }
     }
