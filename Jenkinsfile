@@ -57,23 +57,29 @@ pipeline {
     
     post {
         success {
-            sh """
-            curl -X POST -H 'Content-Type: application/json' \
-            -d '{"text":"✅ Pipeline Exitoso - ${env.JOB_NAME} #${env.BUILD_NUMBER}"}' \
-            ${env.SLACK_WEBHOOK}
-            """
+            node('') {
+                sh """
+                curl -X POST -H 'Content-Type: application/json' \
+                -d '{"text":"✅ Pipeline Exitoso - ${env.JOB_NAME} #${env.BUILD_NUMBER}"}' \
+                ${env.SLACK_WEBHOOK}
+                """
+            }
         }
         
         failure {
-            sh """
-            curl -X POST -H 'Content-Type: application/json' \
-            -d '{"text":"❌ Pipeline Fallido - ${env.JOB_NAME} #${env.BUILD_NUMBER}"}' \
-            ${env.SLACK_WEBHOOK}
-            """
+            node('') {
+                sh """
+                curl -X POST -H 'Content-Type: application/json' \
+                -d '{"text":"❌ Pipeline Fallido - ${env.JOB_NAME} #${env.BUILD_NUMBER}"}' \
+                ${env.SLACK_WEBHOOK}
+                """
+            }
         }
         
         always {
-            sh 'pkill -f spring-boot || true'
+            node('') {
+                sh 'pkill -f spring-boot || true'
+            }
         }
     }
 }
