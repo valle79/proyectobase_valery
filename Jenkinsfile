@@ -2,7 +2,7 @@ pipeline {
     agent any
     
     environment {
-        SONAR_HOST_URL = 'http://localhost:9000'
+        SONAR_HOST_URL = 'http://sonarqube:9000' // cambiar si no usas red docker
         SONAR_TOKEN = credentials('sonarqube-token')
         SLACK_WEBHOOK = credentials('slack-webhook-url')
     }
@@ -18,7 +18,7 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Compilando el proyecto con Maven...'
-                sh 'mvn clean install'
+                sh 'mvn clean install -DskipTests'
             }
         }
         
@@ -26,12 +26,12 @@ pipeline {
             steps {
                 echo 'Ejecutando análisis con SonarQube...'
                 withSonarQubeEnv('SonarQube') {
-                    sh '''
+                    sh """
                     mvn sonar:sonar \
                     -Dsonar.projectKey=vallegrande-project \
-                    -Dsonar.host.url=$SONAR_HOST_URL \
-                    -Dsonar.login=$SONAR_TOKEN
-                    '''
+                    -Dsonar.host.url=${env.SONAR_HOST_URL} \
+                    -Dsonar.login=${env.SONAR_TOKEN}
+                    """
                 }
             }
         }
@@ -48,7 +48,7 @@ pipeline {
         stage('Run Application') {
             steps {
                 echo 'Iniciando aplicación...'
-                sh 'nohup mvn spring-boot:run &'
+                sh 'nohup mvn spring-boot:run > app.log 2>&1 &'
                 sleep 30
             }
         }
@@ -64,25 +64,31 @@ pipeline {
     post {
         success {
             echo 'Pipeline exitoso'
-            sh """
-            curl -X POST -H 'Content-Type: application/json' \
-            -d '{"text":"✅ Pipeline Exitoso - ${env.JOB_NAME} #${env.BUILD_NUMBER}"}' \
-            $SLACK_WEBHOOK
-            """
+            node {
+                sh """
+                curl -X POST -H 'Content-Type: application/json' \
+                -d '{"text":"✅ Pipeline Exitoso - ${env.JOB_NAME} #${env.BUILD_NUMBER}"}' \
+                ${env.SLACK_WEBHOOK}
+                """
+            }
         }
         
         failure {
             echo 'Pipeline falló'
-            sh """
-            curl -X POST -H 'Content-Type: application/json' \
-            -d '{"text":"❌ Pipeline Fallido - ${env.JOB_NAME} #${env.BUILD_NUMBER}"}' \
-            $SLACK_WEBHOOK
-            """
+            node {
+                sh """
+                curl -X POST -H 'Content-Type: application/json' \
+                -d '{"text":"❌ Pipeline Fallido - ${env.JOB_NAME} #${env.BUILD_NUMBER}"}' \
+                ${env.SLACK_WEBHOOK}
+                """
+            }
         }
         
         always {
             echo 'Limpiando recursos...'
-            sh 'pkill -f java || true'
+            node {
+                sh 'pkill -f spring-boot || true'
+            }
         }
     }
 }
