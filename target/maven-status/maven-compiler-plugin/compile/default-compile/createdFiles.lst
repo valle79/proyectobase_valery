@@ -1,0 +1,4 @@
+vallegrande\edu\pe\controller\ApiController.class
+vallegrande\edu\pe\model\Product.class
+vallegrande\edu\pe\service\ProductService.class
+vallegrande\edu\pe\DemoApplication.class
